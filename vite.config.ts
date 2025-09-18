@@ -15,7 +15,8 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "pdfjs-dist/build/pdf.worker.min": "pdfjs-dist/build/pdf.worker.min?url", // 👈
+      "pdfjs-dist/build/pdf.worker.min": "pdfjs-dist/build/pdf.worker.min?url", // ✅ still needed
+      "react-pdf": "react-pdf/dist/esm/entry.vite", // ✅ add this
     },
   },
 }));
