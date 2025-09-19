@@ -20,9 +20,9 @@ interface PDFUploadSectionProps {
 }
 
 export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
-  onSelectionComplete,
-  className
-}) => {
+                                                                    onSelectionComplete,
+                                                                    className
+                                                                  }) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
@@ -36,22 +36,14 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (file.type !== 'application/pdf') {
-      addError({
-        message: 'Please select a PDF file',
-        type: 'validation'
-      });
+      addError({ message: 'Please select a PDF file', type: 'validation' });
       return;
     }
 
-    // Validate file size (10MB limit)
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
-      addError({
-        message: 'File size must be less than 10MB',
-        type: 'validation'
-      });
+      addError({ message: 'File size must be less than 10MB', type: 'validation' });
       return;
     }
 
@@ -63,7 +55,6 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
 
   const handlePDFLoadSuccess = (numPages: number) => {
     setTotalPages(numPages);
-    // Auto-select all pages by default
     const allPages = Array.from({ length: numPages }, (_, i) => i + 1);
     setSelectedPages(allPages);
   };
@@ -73,13 +64,11 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
   };
 
   const handlePageSelect = (pageNumber: number) => {
-    setSelectedPages(prev => {
-      if (prev.includes(pageNumber)) {
-        return prev.filter(p => p !== pageNumber);
-      } else {
-        return [...prev, pageNumber].sort((a, b) => a - b);
-      }
-    });
+    setSelectedPages(prev =>
+        prev.includes(pageNumber)
+            ? prev.filter(p => p !== pageNumber)
+            : [...prev, pageNumber].sort((a, b) => a - b)
+    );
   };
 
   const handleProcessSelection = async () => {
@@ -96,8 +85,9 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
 
     try {
       const selection: PDFSelection = {
+        file: uploadedFile, // ✅ include actual file
         selectedPages,
-        selectedText: [], // Text selection not implemented yet
+        selectedText: [],
         selectionType: 'pages',
         metadata: {
           totalPages,
@@ -106,8 +96,7 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
         }
       };
 
-      // Simulate processing delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       onSelectionComplete?.(selection);
       setSuccess('PDF processed successfully! Ready to generate study materials.');
@@ -128,177 +117,143 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
   };
 
   return (
-    <div className={cn('space-y-6', className)}>
-      {/* Error Display */}
-      <ErrorList 
-        errors={errors} 
-        onDismiss={clearError}
-        onRetry={() => window.location.reload()}
-      />
+      <div className={cn('space-y-6', className)}>
+        <ErrorList errors={errors} onDismiss={clearError} onRetry={() => window.location.reload()} />
 
-      {/* Success Display */}
-      {success && (
-        <SuccessDisplay
-          message={success}
-          onDismiss={() => setSuccess(null)}
-          actions={[
-            {
-              label: 'Upload Another',
-              onClick: resetUpload,
-              variant: 'outline'
-            }
-          ]}
-        />
-      )}
+        {success && (
+            <SuccessDisplay
+                message={success}
+                onDismiss={() => setSuccess(null)}
+                actions={[
+                  { label: 'Upload Another', onClick: resetUpload, variant: 'outline' }
+                ]}
+            />
+        )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Upload className="h-5 w-5 text-primary" />
-            <span>PDF Upload & Selection</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="upload" className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
-                <span>Upload</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="preview" 
-                disabled={!uploadedFile}
-                className="flex items-center space-x-2"
-              >
-                <Eye className="h-4 w-4" />
-                <span>Preview</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="select" 
-                disabled={!uploadedFile}
-                className="flex items-center space-x-2"
-              >
-                <Settings className="h-4 w-4" />
-                <span>Select</span>
-              </TabsTrigger>
-            </TabsList>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Upload className="h-5 w-5 text-primary" />
+              <span>PDF Upload & Selection</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="upload" className="flex items-center space-x-2">
+                  <FileText className="h-4 w-4" />
+                  <span>Upload</span>
+                </TabsTrigger>
+                <TabsTrigger value="preview" disabled={!uploadedFile} className="flex items-center space-x-2">
+                  <Eye className="h-4 w-4" />
+                  <span>Preview</span>
+                </TabsTrigger>
+                <TabsTrigger value="select" disabled={!uploadedFile} className="flex items-center space-x-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Select</span>
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="upload" className="space-y-4">
-              <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="pdf-upload"
-                />
-                <label htmlFor="pdf-upload" className="cursor-pointer block">
-                  <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-medium mb-2">
-                    {uploadedFile ? uploadedFile.name : "Choose PDF file"}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {uploadedFile 
-                      ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB - Click to change`
-                      : "Click to browse or drag and drop (Max 10MB)"
-                    }
-                  </p>
-                </label>
-              </div>
-
-              {uploadedFile && (
-                <div className="flex justify-center">
-                  <Button onClick={() => setActiveTab('preview')}>
-                    Continue to Preview
-                  </Button>
+              <TabsContent value="upload" className="space-y-4">
+                <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary/50 transition-colors">
+                  <input type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" id="pdf-upload" />
+                  <label htmlFor="pdf-upload" className="cursor-pointer block">
+                    <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg font-medium mb-2">
+                      {uploadedFile ? uploadedFile.name : 'Choose PDF file'}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {uploadedFile
+                          ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB - Click to change`
+                          : 'Click to browse or drag and drop (Max 10MB)'}
+                    </p>
+                  </label>
                 </div>
-              )}
-            </TabsContent>
 
-            <TabsContent value="preview" className="space-y-4">
-              {uploadedFile && (
-                <>
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-medium">PDF Preview</h3>
-                    <Button
-                      variant="outline"
-                      onClick={() => setActiveTab('select')}
-                      disabled={totalPages === 0}
-                    >
-                      Configure Selection
-                    </Button>
-                  </div>
-                  
-                  <PDFPreview
-                    file={uploadedFile}
-                    onLoadSuccess={handlePDFLoadSuccess}
-                    onLoadError={handlePDFLoadError}
-                    selectedPages={selectedPages}
-                    onPageSelect={handlePageSelect}
-                  />
-                </>
-              )}
-            </TabsContent>
-
-            <TabsContent value="select" className="space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <PageSelector
-                  totalPages={totalPages}
-                  selectedPages={selectedPages}
-                  onSelectionChange={setSelectedPages}
-                />
-                
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Process Selection</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Selected Content</Label>
-                      <div className="p-3 bg-muted rounded-lg">
-                        <p className="text-sm">
-                          <strong>File:</strong> {uploadedFile?.name}
-                        </p>
-                        <p className="text-sm">
-                          <strong>Pages:</strong> {selectedPages.length} of {totalPages}
-                        </p>
-                        <p className="text-sm">
-                          <strong>Coverage:</strong> {Math.round((selectedPages.length / totalPages) * 100)}%
-                        </p>
-                      </div>
+                {uploadedFile && (
+                    <div className="flex justify-center">
+                      <Button onClick={() => setActiveTab('preview')}>Continue to Preview</Button>
                     </div>
+                )}
+              </TabsContent>
 
-                    <Button
-                      onClick={handleProcessSelection}
-                      disabled={isProcessing || selectedPages.length === 0}
-                      className="w-full"
-                      variant="hero"
-                    >
-                      {isProcessing ? (
-                        <>
-                          <LoadingSpinner size="sm" className="mr-2" />
-                          Processing...
-                        </>
-                      ) : (
-                        'Process Selection'
-                      )}
-                    </Button>
+              <TabsContent value="preview" className="space-y-4">
+                {uploadedFile && (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-medium">PDF Preview</h3>
+                        <Button variant="outline" onClick={() => setActiveTab('select')} disabled={totalPages === 0}>
+                          Configure Selection
+                        </Button>
+                      </div>
 
-                    <Button
-                      variant="outline"
-                      onClick={resetUpload}
-                      className="w-full"
-                    >
-                      Start Over
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+                      <PDFPreview
+                          file={uploadedFile}
+                          onLoadSuccess={handlePDFLoadSuccess}
+                          onLoadError={handlePDFLoadError}
+                          selectedPages={selectedPages}
+                          onPageSelect={handlePageSelect}
+                      />
+                    </>
+                )}
+              </TabsContent>
+
+              <TabsContent value="select" className="space-y-4">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <PageSelector
+                      totalPages={totalPages}
+                      selectedPages={selectedPages}
+                      onSelectionChange={setSelectedPages}
+                  />
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Process Selection</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Selected Content</Label>
+                        <div className="p-3 bg-muted rounded-lg">
+                          <p className="text-sm">
+                            <strong>File:</strong> {uploadedFile?.name}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Pages:</strong> {selectedPages.length} of {totalPages}
+                          </p>
+                          <p className="text-sm">
+                            <strong>Coverage:</strong>{' '}
+                            {Math.round((selectedPages.length / totalPages) * 100)}%
+                          </p>
+                        </div>
+                      </div>
+
+                      <Button
+                          onClick={handleProcessSelection}
+                          disabled={isProcessing || selectedPages.length === 0}
+                          className="w-full"
+                          variant="hero"
+                      >
+                        {isProcessing ? (
+                            <>
+                              <LoadingSpinner size="sm" className="mr-2" />
+                              Processing...
+                            </>
+                        ) : (
+                            'Process Selection'
+                        )}
+                      </Button>
+
+                      <Button variant="outline" onClick={resetUpload} className="w-full">
+                        Start Over
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
   );
 };
 

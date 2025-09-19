@@ -24,7 +24,7 @@ const DashboardHome = () => {
   const [questions, setQuestions] = useState<StudyQuestionResponse[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
-  const [pdfSelection, setPdfSelection] = useState<PDFSelection | null>(null);
+  const [ pdfSelection, setPdfSelection] = useState<PDFSelection | null>(null);
 
   const { errors, addError, clearError } = useApiError();
   const userId = localStorage.getItem("userId");
@@ -34,6 +34,7 @@ const DashboardHome = () => {
     console.log("PDF selection completed:", selection);
   };
 
+  // Only showing updated handleRequest
   const handleRequest = async (endpoint: string, includeQuestions = false) => {
     if (!pdfSelection || !userId) {
       addError({
@@ -47,34 +48,31 @@ const DashboardHome = () => {
 
     try {
       const formData = new FormData();
-      // Note: We would need to store the original file to append it here
-      // For now, we'll work with the selection data
+      formData.append("file", pdfSelection.file);  // ✅ include file
       formData.append("userId", userId);
-      formData.append("selectedPages", JSON.stringify(pdfSelection.selectedPages));
-      if (includeQuestions) formData.append("numberOfQuestions", "5");
+      if (includeQuestions) {
+        formData.append("numberOfQuestions", "5");
+      }
 
-      const { data } = await axios.post(`${BASE_URL}/api/study/${endpoint}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const { data } = await axios.post(
+          `${BASE_URL}/api/study/${endpoint}`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+      );
 
       console.log(`[${endpoint}] response:`, data);
 
-      // Handle summary
       if (data.summary) {
         setSummary(data.summary);
         setShowSummary(true);
       }
 
-      // Handle questions
       let questionsData: StudyQuestionResponse[] = [];
-
       if (Array.isArray(data)) {
-        // backend returns array directly
         questionsData = data;
       } else if (Array.isArray(data.questions)) {
         questionsData = data.questions;
       } else if (Array.isArray(data.studyQuestions)) {
-        // in case backend wraps differently
         questionsData = data.studyQuestions;
       }
 
@@ -86,7 +84,6 @@ const DashboardHome = () => {
         setQuestions([]);
         setShowQuestions(false);
       }
-
     } catch (err) {
       console.error(`Error calling ${endpoint}:`, err);
       addError(err);
@@ -94,6 +91,7 @@ const DashboardHome = () => {
       setIsProcessing(false);
     }
   };
+
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty?.toLowerCase()) {

@@ -1,4 +1,5 @@
 export interface PDFSelection {
+  file: File;
   selectedPages: number[];
   selectedText: Array<{
     text: string;
