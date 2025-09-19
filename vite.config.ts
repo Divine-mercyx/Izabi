@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 export default defineConfig(({ mode }) => ({
   server: {
-    host: "::",
+    host: "localhost",
     port: 8080,
   },
   plugins: [
@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // This tells Vite to serve the PDF worker as a file URL instead of bundling it
       "pdfjs-dist/build/pdf.worker.min": "pdfjs-dist/build/pdf.worker.min?url",
     },
   },
