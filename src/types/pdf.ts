@@ -1,5 +1,4 @@
 export interface PDFSelection {
-  file: File;
   selectedPages: number[];
   selectedText: Array<{
     text: string;
@@ -13,6 +12,7 @@ export interface PDFSelection {
     fileName: string;
     fileSize: number;
   };
+  numberOfQuestions: number;
 }
 
 export interface ErrorType {
@@ -32,4 +32,12 @@ export interface StudyMaterial {
   previewImage?: string;
   questionCount: number;
   createdAt: string;
+}
+
+export interface StudyQuestionResponse {
+  question: string;
+  options: string[];
+  answer: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  questionType: 'multiple_choice' | 'true_false' | 'short_answer' | string;
 }

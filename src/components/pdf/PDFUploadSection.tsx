@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, Eye, Settings } from 'lucide-react';
@@ -15,20 +14,21 @@ import { PDFSelection } from '@/types/pdf';
 import { cn } from '@/lib/utils';
 
 interface PDFUploadSectionProps {
-  onSelectionComplete?: (selection: PDFSelection) => void;
+  onSelectionComplete?: (data: { selection: PDFSelection; file: File }) => void;
   className?: string;
 }
 
-export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
-                                                                    onSelectionComplete,
-                                                                    className
-                                                                  }) => {
+const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
+                                                             onSelectionComplete,
+                                                             className
+                                                           }) => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [selectedPages, setSelectedPages] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<string>('upload');
   const [isProcessing, setIsProcessing] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);
+  const [numQuestions, setNumQuestions] = useState<number>(5);
 
   const { errors, addError, clearErrors, clearError } = useApiError();
 
@@ -55,12 +55,7 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
 
   const handlePDFLoadSuccess = (numPages: number) => {
     setTotalPages(numPages);
-    const allPages = Array.from({ length: numPages }, (_, i) => i + 1);
-    setSelectedPages(allPages);
-  };
-
-  const handlePDFLoadError = (error: Error) => {
-    addError(error);
+    setSelectedPages(Array.from({ length: numPages }, (_, i) => i + 1));
   };
 
   const handlePageSelect = (pageNumber: number) => {
@@ -71,40 +66,32 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
     );
   };
 
-  const handleProcessSelection = async () => {
+  const handleProcessSelection = () => {
     if (!uploadedFile || selectedPages.length === 0) {
-      addError({
-        message: 'Please select at least one page to process',
-        type: 'validation'
-      });
+      addError({ message: 'Please select at least one page to process', type: 'validation' });
       return;
     }
 
     setIsProcessing(true);
     clearErrors();
 
-    try {
-      const selection: PDFSelection = {
-        file: uploadedFile, // ✅ include actual file
-        selectedPages,
-        selectedText: [],
-        selectionType: 'pages',
-        metadata: {
-          totalPages,
-          fileName: uploadedFile.name,
-          fileSize: uploadedFile.size
-        }
-      };
+    const selection: PDFSelection = {
+      selectedPages,
+      selectedText: [],
+      selectionType: 'pages',
+      metadata: {
+        totalPages,
+        fileName: uploadedFile.name,
+        fileSize: uploadedFile.size
+      },
+      numberOfQuestions: numQuestions
+    };
 
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      onSelectionComplete?.(selection);
+    setTimeout(() => {
+      onSelectionComplete?.({ selection, file: uploadedFile });
       setSuccess('PDF processed successfully! Ready to generate study materials.');
-    } catch (error) {
-      addError(error);
-    } finally {
       setIsProcessing(false);
-    }
+    }, 500);
   };
 
   const resetUpload = () => {
@@ -112,8 +99,9 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
     setTotalPages(0);
     setSelectedPages([]);
     setActiveTab('upload');
-    clearErrors();
     setSuccess(null);
+    clearErrors();
+    setNumQuestions(5);
   };
 
   return (
@@ -124,9 +112,7 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
             <SuccessDisplay
                 message={success}
                 onDismiss={() => setSuccess(null)}
-                actions={[
-                  { label: 'Upload Another', onClick: resetUpload, variant: 'outline' }
-                ]}
+                actions={[{ label: 'Upload Another', onClick: resetUpload, variant: 'outline' }]}
             />
         )}
 
@@ -159,9 +145,7 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
                   <input type="file" accept=".pdf" onChange={handleFileUpload} className="hidden" id="pdf-upload" />
                   <label htmlFor="pdf-upload" className="cursor-pointer block">
                     <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-lg font-medium mb-2">
-                      {uploadedFile ? uploadedFile.name : 'Choose PDF file'}
-                    </p>
+                    <p className="text-lg font-medium mb-2">{uploadedFile ? uploadedFile.name : 'Choose PDF file'}</p>
                     <p className="text-muted-foreground">
                       {uploadedFile
                           ? `${(uploadedFile.size / 1024 / 1024).toFixed(2)} MB - Click to change`
@@ -190,7 +174,7 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
                       <PDFPreview
                           file={uploadedFile}
                           onLoadSuccess={handlePDFLoadSuccess}
-                          onLoadError={handlePDFLoadError}
+                          onLoadError={(e) => addError(e)}
                           selectedPages={selectedPages}
                           onPageSelect={handlePageSelect}
                       />
@@ -212,18 +196,23 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
+                        <Label>Number of Questions</Label>
+                        <input
+                            type="number"
+                            min={1}
+                            max={50}
+                            value={numQuestions}
+                            onChange={(e) => setNumQuestions(parseInt(e.target.value))}
+                            className="w-24 p-2 border rounded"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
                         <Label>Selected Content</Label>
                         <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-sm">
-                            <strong>File:</strong> {uploadedFile?.name}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Pages:</strong> {selectedPages.length} of {totalPages}
-                          </p>
-                          <p className="text-sm">
-                            <strong>Coverage:</strong>{' '}
-                            {Math.round((selectedPages.length / totalPages) * 100)}%
-                          </p>
+                          <p className="text-sm"><strong>File:</strong> {uploadedFile?.name}</p>
+                          <p className="text-sm"><strong>Pages:</strong> {selectedPages.length} of {totalPages}</p>
+                          <p className="text-sm"><strong>Coverage:</strong> {Math.round((selectedPages.length / totalPages) * 100)}%</p>
                         </div>
                       </div>
 
@@ -235,12 +224,9 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
                       >
                         {isProcessing ? (
                             <>
-                              <LoadingSpinner size="sm" className="mr-2" />
-                              Processing...
+                              <LoadingSpinner size="sm" className="mr-2" /> Processing...
                             </>
-                        ) : (
-                            'Process Selection'
-                        )}
+                        ) : 'Process Selection'}
                       </Button>
 
                       <Button variant="outline" onClick={resetUpload} className="w-full">
