@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, Eye, Settings } from 'lucide-react';
@@ -15,7 +14,7 @@ import { PDFSelection } from '@/types/pdf';
 import { cn } from '@/lib/utils';
 
 interface PDFUploadSectionProps {
-  onSelectionComplete?: (selection: PDFSelection) => void;
+  onSelectionComplete?: (data: { selection: PDFSelection; file: File }) => void;
   className?: string;
 }
 
@@ -85,7 +84,6 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
 
     try {
       const selection: PDFSelection = {
-        file: uploadedFile, // ✅ include actual file
         selectedPages,
         selectedText: [],
         selectionType: 'pages',
@@ -98,7 +96,7 @@ export const PDFUploadSection: React.FC<PDFUploadSectionProps> = ({
 
       await new Promise(resolve => setTimeout(resolve, 500));
 
-      onSelectionComplete?.(selection);
+      onSelectionComplete?.({ selection, file: uploadedFile });
       setSuccess('PDF processed successfully! Ready to generate study materials.');
     } catch (error) {
       addError(error);

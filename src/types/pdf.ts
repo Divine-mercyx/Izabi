@@ -1,6 +1,5 @@
 export interface PDFSelection {
-  file: File;
-  selectedPages: number[];
+  selectedPages: number[]; // Pages user selected
   selectedText: Array<{
     text: string;
     page: number;
@@ -28,8 +27,17 @@ export interface StudyMaterial {
   title: string;
   subject: string;
   difficulty: 'easy' | 'medium' | 'hard';
-  estimatedTime: number;
+  estimatedTime: number; // in minutes
   previewImage?: string;
   questionCount: number;
-  createdAt: string;
+  createdAt: string; // ISO date string
+}
+
+// Optional: API response types for study questions
+export interface StudyQuestionResponse {
+  question: string;
+  options: string[];
+  answer: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  questionType: 'multiple_choice' | 'true_false' | 'short_answer' | string;
 }

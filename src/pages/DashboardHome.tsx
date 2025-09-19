@@ -3,7 +3,7 @@ import axios from "axios";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { BASE_URL } from "@/contants/contants.ts";
-import { Upload, FileText, Brain, Zap, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
+import { FileText, Brain, Zap, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import PDFUploadSection from "@/components/pdf/PDFUploadSection";
 import { PDFSelection } from "@/types/pdf";
@@ -24,21 +24,22 @@ const DashboardHome = () => {
   const [questions, setQuestions] = useState<StudyQuestionResponse[]>([]);
   const [showSummary, setShowSummary] = useState(false);
   const [showQuestions, setShowQuestions] = useState(false);
-  const [ pdfSelection, setPdfSelection] = useState<PDFSelection | null>(null);
+  const [pdfSelection, setPdfSelection] = useState<PDFSelection | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   const { errors, addError, clearError } = useApiError();
   const userId = localStorage.getItem("userId");
 
-  const handleSelectionComplete = (selection: PDFSelection) => {
+  const handleSelectionComplete = ({ selection, file }: { selection: PDFSelection; file: File }) => {
     setPdfSelection(selection);
+    setPdfFile(file);
     console.log("PDF selection completed:", selection);
   };
 
-  // Only showing updated handleRequest
   const handleRequest = async (endpoint: string, includeQuestions = false) => {
-    if (!pdfSelection || !userId) {
+    if (!pdfFile || !userId) {
       addError({
-        message: "Please upload and select PDF content first",
+        message: "Please upload and select a PDF first",
         type: "validation"
       });
       return;
@@ -48,7 +49,7 @@ const DashboardHome = () => {
 
     try {
       const formData = new FormData();
-      formData.append("file", pdfSelection.file);  // ✅ include file
+      formData.append("file", pdfFile);
       formData.append("userId", userId);
       if (includeQuestions) {
         formData.append("numberOfQuestions", "5");
@@ -92,35 +93,30 @@ const DashboardHome = () => {
     }
   };
 
-
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty?.toLowerCase()) {
-      case 'easy': return 'text-green-600';
-      case 'medium': return 'text-yellow-600';
-      case 'hard': return 'text-red-600';
-      default: return 'text-muted-foreground';
+      case "easy": return "text-green-600";
+      case "medium": return "text-yellow-600";
+      case "hard": return "text-red-600";
+      default: return "text-muted-foreground";
     }
   };
 
   const getQuestionTypeIcon = (questionType: string) => {
     switch (questionType?.toLowerCase()) {
-      case 'multiple_choice':
-      case 'multiple choice': return '🔘';
-      case 'true_false':
-      case 'true false': return '✓/✗';
-      case 'short_answer':
-      case 'short answer': return '✍️';
-      default: return '❓';
+      case "multiple_choice":
+      case "multiple choice": return "🔘";
+      case "true_false":
+      case "true false": return "✓/✗";
+      case "short_answer":
+      case "short answer": return "✍️";
+      default: return "❓";
     }
   };
 
   return (
       <div className="space-y-6">
-        {/* Error Display */}
-        <ErrorList 
-          errors={errors} 
-          onDismiss={clearError}
-        />
+        <ErrorList errors={errors} onDismiss={clearError} />
 
         <div>
           <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
@@ -129,81 +125,77 @@ const DashboardHome = () => {
           </p>
         </div>
 
-        {/* PDF Upload Section */}
         <PDFUploadSection onSelectionComplete={handleSelectionComplete} />
 
-        {/* AI Processing Section */}
         {pdfSelection && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                <span>AI Study Tools</span>
-              </CardTitle>
-              <CardDescription>
-                Generate personalized study materials from your selected content
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button
-                  onClick={() => handleRequest("summarize")}
-                  disabled={isProcessing}
-                  variant="hero"
-                  className="h-20 flex-col space-y-2"
-                >
-                  <Brain className="h-6 w-6" />
-                  <div className="text-center">
-                    <div className="font-medium">Smart Summary</div>
-                    <div className="text-xs opacity-75">Key concepts & insights</div>
-                  </div>
-                </Button>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  <span>AI Study Tools</span>
+                </CardTitle>
+                <CardDescription>
+                  Generate personalized study materials from your selected content
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button
+                      onClick={() => handleRequest("summarize")}
+                      disabled={isProcessing}
+                      variant="hero"
+                      className="h-20 flex-col space-y-2"
+                  >
+                    <Brain className="h-6 w-6" />
+                    <div className="text-center">
+                      <div className="font-medium">Smart Summary</div>
+                      <div className="text-xs opacity-75">Key concepts & insights</div>
+                    </div>
+                  </Button>
 
-                <Button
-                  onClick={() => handleRequest("generate-questions", true)}
-                  disabled={isProcessing}
-                  variant="secondary"
-                  className="h-20 flex-col space-y-2"
-                >
-                  <Zap className="h-6 w-6" />
-                  <div className="text-center">
-                    <div className="font-medium">Practice Quiz</div>
-                    <div className="text-xs opacity-75">Test your knowledge</div>
-                  </div>
-                </Button>
+                  <Button
+                      onClick={() => handleRequest("generate-questions", true)}
+                      disabled={isProcessing}
+                      variant="secondary"
+                      className="h-20 flex-col space-y-2"
+                  >
+                    <Zap className="h-6 w-6" />
+                    <div className="text-center">
+                      <div className="font-medium">Practice Quiz</div>
+                      <div className="text-xs opacity-75">Test your knowledge</div>
+                    </div>
+                  </Button>
 
-                <Button
-                  onClick={() => handleRequest("generate-study-material", true)}
-                  disabled={isProcessing}
-                  variant="outline"
-                  className="h-20 flex-col space-y-2"
-                >
-                  <FileText className="h-6 w-6" />
-                  <div className="text-center">
-                    <div className="font-medium">Study Guide</div>
-                    <div className="text-xs opacity-75">Complete materials</div>
-                  </div>
-                </Button>
-              </div>
-
-              {isProcessing && (
-                <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
-                    <span className="text-sm">Processing your content with AI...</span>
-                  </div>
+                  <Button
+                      onClick={() => handleRequest("generate-study-material", true)}
+                      disabled={isProcessing}
+                      variant="outline"
+                      className="h-20 flex-col space-y-2"
+                  >
+                    <FileText className="h-6 w-6" />
+                    <div className="text-center">
+                      <div className="font-medium">Study Guide</div>
+                      <div className="text-xs opacity-75">Complete materials</div>
+                    </div>
+                  </Button>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {isProcessing && (
+                    <div className="mt-4 p-4 bg-muted/30 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent"></div>
+                        <span className="text-sm">Processing your content with AI...</span>
+                      </div>
+                    </div>
+                )}
+              </CardContent>
+            </Card>
         )}
 
-        {/* Results Section */}
         {(summary || questions.length > 0) && (
             <div className="space-y-4">
               <h2 className="text-2xl font-semibold">Generated Content</h2>
 
-              {/* Summary */}
               {summary && (
                   <Collapsible open={showSummary} onOpenChange={setShowSummary}>
                     <Card>
@@ -229,7 +221,6 @@ const DashboardHome = () => {
                   </Collapsible>
               )}
 
-              {/* Questions */}
               {questions.length > 0 && (
                   <Collapsible open={showQuestions} onOpenChange={setShowQuestions}>
                     <Card>
